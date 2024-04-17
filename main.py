@@ -1,40 +1,40 @@
 import requests
-import webbrowser
+from bs4 import BeautifulSoup
 
 def main():
-    # Step 1: Send a GET request and access cookies
-    url = "https://parents.msrit.edu/parentsodd/"
-    response = requests.get(url)
-    
-    if response.status_code == 200:
-        print("GET request successful")
-        cookies = response.cookies  # Accessing cookies from the response
-        print("Cookies:", cookies)
-        
-        # Step 2: Send a POST request to url with payload and cookies
-        dashboard_url = "https://parents.msrit.edu/parentsodd/index.php?option=com_studentdashboard&controller=studentdashboard&task=dashboard"
+    url = "https://parents.msrit.edu/parentsodd/index.php"
+
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
+    }
+
+    with requests.Session() as session:
+        session.get(url, headers=headers)
+
+     
         payload = {
-            'username': 'USN',
-            'dd': '00',  # Day
-            'mm': '00',  # Month
-            'yyyy': '0000'  # Year
+            "username": "myUSN",
+            "dd": "00",
+            "mm": "00",
+            "yyyy": "0000",
+            "passwd": "yyyy-mm-dd",
+            "remember": "",
+            "option": "com_user",
+            "task": "login",
+            "return": "",
+            "ea07d18ec2752bcca07e20a852d96337": "1"
         }
-        
-        cookies_dict = {cookie.name: cookie.value for cookie in cookies}
-        headers = {'Cookie': '; '.join([f"{name}={value}" for name, value in cookies_dict.items()])}
-        
-        post_response = requests.post(url, data=payload, headers=headers)
-                
-        if post_response.status_code == 200:
-            print("POST request successful")
-            # print("Dashboard Response:", post_response.content)
-            
-            # Step 3: Open the URL in the browser
-            webbrowser.open_new_tab(url)
+
+        response = session.post(url, data=payload, headers=headers)
+
+        if response.status_code == 200:
+            print("Login successful")
+
+            soup = BeautifulSoup(response.content, 'html.parser')
+            print(soup.prettify())
+
         else:
-            print("POST request failed")
-    else:
-        print("GET request failed")
+            print("Login failed")
 
 if __name__ == "__main__":
     main()
