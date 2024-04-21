@@ -12,7 +12,7 @@ def main():
         session.get(url, headers=headers)
 
         payload = {
-            "username": USN,
+            "username": "USN",
             "dd": "00",
             "mm": "00",
             "yyyy": "0000",
