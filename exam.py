@@ -24,8 +24,8 @@ with open(csv_file, 'w', newline='') as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
 
-    for i in range(1, 169):  
-        usn = f"1MS22CS{i:03}" 
+    for i in range(53, 75):  
+        usn = f"1MS22CY{i:03}" 
         payload = {
             "usn": usn,
             "osolCatchaTxt": "",
@@ -40,6 +40,7 @@ with open(csv_file, 'w', newline='') as csvfile:
             if response.status_code == 200:
                 print(f"Fetching results for USN: {usn}")
                 soup = BeautifulSoup(response.content, 'html.parser')
+                # print(soup.prettify())
                 name = soup.find('h3').text.strip()
                 sgpa = soup.find_all('p')[3].text.strip()
                 semester = soup.find('p').text.split(',')[-1].strip()
