@@ -1,60 +1,70 @@
-import requests
-from bs4 import BeautifulSoup
+import numpy as np
+import time
+import matplotlib.pyplot as plt
 
-def main():
-    url = "https://parents.msrit.edu/parentsodd/index.php"
+# Generate a sample signal
+def generate_signal(N):
+    t = np.linspace(0, 1, N)
+    signal = np.sin(2 * np.pi * 5 * t) + 0.5 * np.sin(2 * np.pi * 10 * t)
+    return t, signal
 
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
-    }
+# Brute Force Fourier Series Analysis
+def brute_force_fourier(signal, t, terms):
+    N = len(signal)
+    a0 = np.mean(signal)
+    a = np.zeros(terms)
+    b = np.zeros(terms)
+    for n in range(1, terms + 1):
+        a[n - 1] = 2 / N * np.sum(signal * np.cos(2 * np.pi * n * t))
+        b[n - 1] = 2 / N * np.sum(signal * np.sin(2 * np.pi * n * t))
+    return a0, a, b
 
-    with requests.Session() as session:
-        session.get(url, headers=headers)
+# Optimized Brute Force Fourier Series Analysis using numpy vectorization
+def optimized_brute_force_fourier(signal, t, terms):
+    N = len(signal)
+    a0 = np.mean(signal)
+    n = np.arange(1, terms + 1).reshape(-1, 1)
+    cos_terms = np.cos(2 * np.pi * n * t)
+    sin_terms = np.sin(2 * np.pi * n * t)
+    a = 2 / N * np.sum(signal * cos_terms, axis=1)
+    b = 2 / N * np.sum(signal * sin_terms, axis=1)
+    return a0, a, b
 
-        payload = {
-            "username": "USN",
-            "dd": "00",
-            "mm": "00",
-            "yyyy": "0000",
-            "passwd": "yyyy-mm-dd",
-            "remember": "",
-            "option": "com_user",
-            "task": "login",
-            "return": "",
-            "ea07d18ec2752bcca07e20a852d96337": "1"
-        }
 
-        response = session.post(url, data=payload, headers=headers)
+# Function to measure execution time
+def measure_time(func, *args, repetitions=10):
+    times = []
+    for _ in range(repetitions):
+        start_time = time.time()
+        func(*args)
+        times.append(time.time() - start_time)
+    return np.mean(times)
 
-        if response.status_code == 200:
-            print("Login successful")
+# Measure times for different input sizes
+sizes = [64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]
+brute_force_times = []
+optimized_brute_force_times = []
+fft_times = []
 
-            soup = BeautifulSoup(response.content, 'html.parser')
+for size in sizes:
+    t, signal = generate_signal(size)
 
-            rows = soup.find('tbody').find_all('tr')
-            extracted_data = []
+    # Measure time for brute force method
+    brute_force_time = measure_time(optimized_brute_force_fourier, signal, t, 10)
+    brute_force_times.append(brute_force_time)
 
-            for row in rows:
-                course_code = row.find('td').text.strip()
+    # Measure time for optimized brute force method
+    optimized_brute_force_time = measure_time(brute_force_fourier, signal, t, 10)
+    optimized_brute_force_times.append(optimized_brute_force_time)
 
-                course_name = row.find_all('td')[1].text.strip()
 
-                attendance_button = row.find('button', class_='cn-attendanceclr')
-                attendance_value = None
-                if attendance_button:
-                    attendance_value = attendance_button.text.strip().split()[0] 
-
-                extracted_data.append({
-                    'course_code': course_code,
-                    'course_name': course_name,
-                    'attendance': attendance_value,
-                })
-
-            for data in extracted_data:
-                print(data)
-
-        else:
-            print("Login failed")
-
-if __name__ == "__main__":
-    main()
+# Plotting
+plt.figure(figsize=(10, 6))
+plt.plot(sizes, brute_force_times, label='Unoptimized', marker='o')
+plt.plot(sizes, optimized_brute_force_times, label='Optimized', marker='o')
+plt.xlabel('Input Size')
+plt.ylabel('Time (seconds)')
+plt.title('Time Comparison of Fourier Analysis Methods')
+plt.legend()
+plt.grid(True)
+plt.show()
